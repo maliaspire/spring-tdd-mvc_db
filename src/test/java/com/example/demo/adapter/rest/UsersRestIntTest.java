@@ -1,7 +1,6 @@
 package com.example.demo.adapter.rest;
 
 import com.example.demo.DemoApplication;
-import com.example.demo.adapter.respository.UserMongoRepository;
 import com.example.demo.adapter.respository.UserProjection;
 import com.example.demo.aggregates.UserAggregate;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,22 +12,13 @@ import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import static org.junit.runners.Parameterized.*;
 
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -46,8 +36,8 @@ public class UsersRestIntTest {
     private MockMvc mockMvc;
 
     private static String id;
-    private String name = "Test user";
-    private int age = 10;
+    private static String name = "Test user";
+    private static int age = 10;
     private ObjectMapper mapper = new ObjectMapper();
 
     @Test
