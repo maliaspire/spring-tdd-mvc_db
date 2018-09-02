@@ -14,7 +14,7 @@ import lombok.*;
 @AllArgsConstructor
 public class UserAggregate {
 
-    private Integer id;
+    private String id;
     private String username;
     private int age;
 

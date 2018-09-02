@@ -1,10 +1,14 @@
 package com.example.demo.adapter.respository;
 
+import com.example.demo.TestConfig;
+import com.example.demo.TestConfigMock;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,13 +24,16 @@ import static org.mockito.BDDMockito.given;
  * @author Mohammad Al-Najjar (Mx NINJA)
  */
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = TestConfig.class)
 public class UserMongoRepositoryTest {
 
-    @Mock
+    @Autowired
     private UsersDAO usersDAO;
 
     private UserMongoRepository repository;
+
+    private UserProjection userProjection = new UserProjection("1", "test", 10);
 
     @Before
     public void setup() {
@@ -34,15 +41,23 @@ public class UserMongoRepositoryTest {
     }
 
     @Test
+    @Ignore
+    public void whenSaveUser() {
+        given(usersDAO.save(userProjection)).willReturn(new UserProjection("2", "test", 10));
+
+        UserProjection projection = repository.save(null);
+    }
+
+    @Test
     public void whenFindById() {
-        given(usersDAO.findById(1)).willReturn(Optional.of(new UserProjection(1, "test user 1", 28)));
+        given(usersDAO.findById(1)).willReturn(Optional.of(userProjection));
 
         Optional<UserProjection> optional = repository.getUserById(1);
 
         assertTrue(optional.isPresent());
         assertEquals(1, optional.get().getId());
-        assertEquals("test user 1", optional.get().getUsername());
-        assertEquals(28, optional.get().getAge());
+        assertEquals("test", optional.get().getUsername());
+        assertEquals(10, optional.get().getAge());
     }
 
 
@@ -65,8 +80,8 @@ public class UserMongoRepositoryTest {
     @Test
     public void whenFindAll() {
         List<UserProjection> list = new ArrayList<>();
-        list.add(new UserProjection(1, "test user 1", 16));
-        list.add(new UserProjection(2, "test user 2", 20));
+        list.add(new UserProjection("1", "test user 1", 16));
+        list.add(new UserProjection("2", "test user 2", 20));
         given(usersDAO.findAll()).willReturn(list);
 
         List<UserProjection> usersList = repository.getAll();
@@ -75,7 +90,6 @@ public class UserMongoRepositoryTest {
         assertEquals(1, userProjection.getId());
         assertEquals("test user 1", userProjection.getUsername());
         assertEquals(16, userProjection.getAge());
-        System.out.println(list);
     }
 
 }
