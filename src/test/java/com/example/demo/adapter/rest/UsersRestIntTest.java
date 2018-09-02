@@ -5,14 +5,20 @@ import com.example.demo.adapter.respository.UserMongoRepository;
 import com.example.demo.adapter.respository.UserProjection;
 import com.example.demo.aggregates.UserAggregate;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.bson.types.ObjectId;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.util.ArrayList;
@@ -22,6 +28,8 @@ import java.util.Optional;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -31,61 +39,70 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         classes = DemoApplication.class)
 @AutoConfigureMockMvc
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class UsersRestIntTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    private UserAggregate aggregate = new UserAggregate(null, "test", 10);
-    private UserProjection projection1 = new UserProjection("1", "test", 10);
+    private static String id;
+    private String name = "Test user";
+    private int age = 10;
     private ObjectMapper mapper = new ObjectMapper();
 
     @Test
-    public void whenSaveNewUser() throws Exception {
-
+    public void order1WhenSaveNewUser() throws Exception {
         mockMvc.perform(post("/users")
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
-                .content(mapper.writeValueAsString(aggregate)))
+                .content(mapper.writeValueAsString(new UserAggregate(null, name, age))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("username").value("test"))
-                .andExpect(jsonPath("age").value(10));
+                .andExpect(jsonPath("$.username").value(name))
+                .andExpect(jsonPath("$.age").value(age))
+                .andDo(result1 -> {
+                    String jsonStr = result1.getResponse().getContentAsString();
+                    UserProjection userProjection = mapper.readValue(jsonStr, UserProjection.class);
+                    id = userProjection.getId();
+                });
+
     }
 
     @Test
-    public void whenGetUser() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/users/id/2"))
+    public void order2WhenGetUser() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/id/{id}", id))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("username").value("test user"))
-                .andExpect(jsonPath("id").value(2))
-                .andExpect(jsonPath("age").value(28));
+                .andExpect(jsonPath("username").value(name))
+                .andExpect(jsonPath("id").value(id))
+                .andExpect(jsonPath("age").value(age));
     }
 
     @Test
-    public void whenNotFoundUserReturnNotFoundException() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/users/id/1"))
+    public void order3WhenNotFoundUserReturnNotFoundException() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/users/id/{id}", ObjectId.get().toHexString()))
                 .andExpect(status().isNotFound());
 
     }
 
     @Test
-    public void whenGetAllEmptyUsers() throws Exception {
+    public void order4whenGetAllUsers() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/users"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id").value(id))
+                .andExpect(jsonPath("$[0].username").value(name))
+                .andExpect(jsonPath("$[0].age").value(age));
     }
 
     @Test
-    public void whenGetAllUsers() throws Exception {
+    public void order5WhenDeleteAllUsers() throws Exception {
+        mockMvc.perform(delete("/users"))
+                .andExpect(status().isOk());
+    }
 
+    @Test
+    public void order6WhenGetAllEmptyUsers() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/users"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].username").value("test user1"))
-                .andExpect(jsonPath("$[0].age").value(28))
-                .andExpect(jsonPath("$[1].id").value(2))
-                .andExpect(jsonPath("$[1].username").value("test user2"))
-                .andExpect(jsonPath("$[1].age").value(25));
+                .andExpect(jsonPath("$", hasSize(0)));
     }
 
 }

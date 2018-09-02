@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
  */
 
 @Repository
-public interface UsersDAO extends MongoRepository<UserProjection, Integer> {
+public interface UsersDAO extends MongoRepository<UserProjection, String> {
 
 
 }

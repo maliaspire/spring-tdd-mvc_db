@@ -1,13 +1,11 @@
 package com.example.demo.adapter.respository;
 
-import com.example.demo.TestConfig;
-import com.example.demo.TestConfigMock;
+import com.example.demo.aggregates.UserAggregate;
+import org.bson.types.ObjectId;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
@@ -16,7 +14,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 /**
  * 9/2/2018
@@ -25,15 +25,16 @@ import static org.mockito.BDDMockito.given;
  */
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = TestConfig.class)
 public class UserMongoRepositoryTest {
 
-    @Autowired
+    @MockBean
     private UsersDAO usersDAO;
 
     private UserMongoRepository repository;
 
-    private UserProjection userProjection = new UserProjection("1", "test", 10);
+    private String id = ObjectId.get().toHexString();
+    private String name = "Test user";
+    private int age = 10;
 
     @Before
     public void setup() {
@@ -41,31 +42,46 @@ public class UserMongoRepositoryTest {
     }
 
     @Test
-    @Ignore
-    public void whenSaveUser() {
-        given(usersDAO.save(userProjection)).willReturn(new UserProjection("2", "test", 10));
+    public void whenDeleteUserWithId() {
+        repository.deleteById(id);
+        verify(usersDAO).deleteById(id);
+    }
 
-        UserProjection projection = repository.save(null);
+    @Test
+    public void whenDeleteAll() {
+        repository.deleteAll();
+        verify(usersDAO).deleteAll();
+    }
+
+    @Test
+    public void whenSaveUser() {
+
+        given(usersDAO.save(any(UserProjection.class))).willReturn(new UserProjection(id, name, age));
+
+        UserProjection projection = repository.save(new UserAggregate(null, name, age));
+        assertNotNull(projection);
+        assertEquals(id, projection.getId());
+        assertEquals(name, projection.getUsername());
+        assertEquals(age, projection.getAge());
     }
 
     @Test
     public void whenFindById() {
-        given(usersDAO.findById(1)).willReturn(Optional.of(userProjection));
+        given(usersDAO.findById(any())).willReturn(Optional.of(new UserProjection(id, name, age)));
 
-        Optional<UserProjection> optional = repository.getUserById(1);
+        Optional<UserProjection> optional = repository.getUserById(id);
 
         assertTrue(optional.isPresent());
-        assertEquals(1, optional.get().getId());
-        assertEquals("test", optional.get().getUsername());
-        assertEquals(10, optional.get().getAge());
+        assertEquals(id, optional.get().getId());
+        assertEquals(name, optional.get().getUsername());
+        assertEquals(age, optional.get().getAge());
     }
-
 
     @Test
     public void whenUserNotFound() {
-        given(usersDAO.findById(1)).willReturn(Optional.empty());
+        given(usersDAO.findById(any())).willReturn(Optional.empty());
 
-        Optional<UserProjection> optional = repository.getUserById(1);
+        Optional<UserProjection> optional = repository.getUserById(any());
 
         assertFalse(optional.isPresent());
     }
@@ -80,16 +96,15 @@ public class UserMongoRepositoryTest {
     @Test
     public void whenFindAll() {
         List<UserProjection> list = new ArrayList<>();
-        list.add(new UserProjection("1", "test user 1", 16));
-        list.add(new UserProjection("2", "test user 2", 20));
+        list.add(new UserProjection(id, name, age));
         given(usersDAO.findAll()).willReturn(list);
 
         List<UserProjection> usersList = repository.getAll();
-        assertEquals(2, usersList.size());
+        assertEquals(1, usersList.size());
         UserProjection userProjection = usersList.get(0);
-        assertEquals(1, userProjection.getId());
-        assertEquals("test user 1", userProjection.getUsername());
-        assertEquals(16, userProjection.getAge());
+        assertEquals(id, userProjection.getId());
+        assertEquals(name, userProjection.getUsername());
+        assertEquals(age, userProjection.getAge());
     }
 
 }

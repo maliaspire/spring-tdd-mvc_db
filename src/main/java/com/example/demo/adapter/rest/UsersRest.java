@@ -29,7 +29,7 @@ public class UsersRest {
     }
 
     @GetMapping("/id/{id}")
-    public UserProjection getById(@PathVariable("id") Integer id) {
+    public UserProjection getById(@PathVariable("id") String id) {
         Optional<UserProjection> optional = userMongoRepository.getUserById(id);
         if (!optional.isPresent()) {
             throw new UserNotFoundException();
@@ -45,6 +45,11 @@ public class UsersRest {
     @PostMapping
     public UserProjection save(@RequestBody UserAggregate aggregate) {
         return userMongoRepository.save(aggregate);
+    }
+
+    @DeleteMapping
+    public void deleteAll() {
+        userMongoRepository.deleteAll();
     }
 
 }

@@ -24,7 +24,7 @@ public class UserMongoRepository {
         this.usersDAO = usersDAO;
     }
 
-    public Optional<UserProjection> getUserById(Integer id) {
+    public Optional<UserProjection> getUserById(String id) {
         return usersDAO.findById(id);
     }
 
@@ -34,6 +34,14 @@ public class UserMongoRepository {
 
     public UserProjection save(UserAggregate aggregate) {
         return usersDAO.save(convertToProjection(aggregate));
+    }
+
+    public void deleteById(String id) {
+        usersDAO.deleteById(id);
+    }
+
+    public void deleteAll(){
+        usersDAO.deleteAll();
     }
 
     private UserProjection convertToProjection(UserAggregate aggregate) {
